@@ -103,6 +103,7 @@ When instructed to update `build-manifest.json`, add or update only your node's 
 - `title`: what this node built
 - `completed_at`: ISO timestamp
 - `contracts`: any API contracts or interfaces created (with full schemas)
+- `schemas`: any database schemas created (with full DDL or model definitions)
 - `files_created`: list of all files created or modified
 - `decisions`: any implementation decisions that downstream work depends on
 - `environment_variables`: any new env vars required
