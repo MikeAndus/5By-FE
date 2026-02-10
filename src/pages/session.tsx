@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { z } from "zod";
 import { ActivePlayerCellsDebug } from "@/components/session/active-player-cells-debug";
-import { AskQuestionPanel } from "@/components/session/ask-question-panel";
 import { GameplayInstructions } from "@/components/session/gameplay-instructions";
 import { PlayerScoreboard } from "@/components/session/player-scoreboard";
 import { SessionHeader } from "@/components/session/session-header";
+import { TurnPanel } from "@/components/session/turn-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -309,7 +309,7 @@ export const SessionPage = (): JSX.Element => {
       <PlayerScoreboard currentTurn={snapshot.current_turn} players={snapshot.players} />
 
       {snapshot.status === "in_progress" && activePlayer ? (
-        <AskQuestionPanel
+        <TurnPanel
           activePlayer={activePlayer}
           onSnapshotUpdate={handleSnapshotUpdate}
           sessionId={snapshot.session_id}

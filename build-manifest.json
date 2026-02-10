@@ -1516,6 +1516,424 @@
           }
         }
       ]
+    },
+    "FE-5": {
+      "title": "Guess UX (letter/word) with confirmation flow, API integration, and result rendering",
+      "completed_at": "2026-02-10T21:06:46Z",
+      "contracts": {
+        "typescript": {
+          "GuessDirection": "\"across\" | \"down\"",
+          "GuessLetterRequest": {
+            "player_number": "1 | 2",
+            "cell_index": "number (int, 0..24)",
+            "letter": "string (regex /^[A-Za-z]$/)"
+          },
+          "GuessWordRequest": {
+            "player_number": "1 | 2",
+            "direction": "GuessDirection",
+            "index": "number (int, 0..4)",
+            "word": "string (regex /^[A-Za-z]{5}$/)"
+          },
+          "AutoRevealCell": {
+            "cell_index": "number (int, 0..24)",
+            "row": "number (int, 0..4)",
+            "col": "number (int, 0..4)",
+            "letter": "string (regex /^[A-Z]$/)"
+          },
+          "LetterGuessedEventData": {
+            "cell_index": "number (int, 0..24)",
+            "row": "number (int, 0..4)",
+            "col": "number (int, 0..4)",
+            "guess": "string (regex /^[A-Z]$/)",
+            "correct": "boolean",
+            "revealed_letter": "string (regex /^[A-Z]$/) | null",
+            "score_delta": "number (int)",
+            "opponent_score_delta": "number (int)",
+            "locks_enqueued": "number[] (int, each 0..24)"
+          },
+          "WordRevealedCell": {
+            "cell_index": "number (int, 0..24)",
+            "row": "number (int, 0..4)",
+            "col": "number (int, 0..4)",
+            "letter": "string (regex /^[A-Z]$/)"
+          },
+          "WordGuessedEventData": {
+            "direction": "GuessDirection",
+            "index": "number (int, 0..4)",
+            "guess": "string (regex /^[A-Z]{5}$/)",
+            "correct": "boolean",
+            "score_delta": "number (int)",
+            "opponent_score_delta": "number (int)",
+            "revealed_cells": "WordRevealedCell[]",
+            "auto_reveals": "AutoRevealCell[]",
+            "locks_enqueued": "number[] (int, each 0..24)"
+          },
+          "guessLetter(sessionId, payload)": "Promise<SessionSnapshot>",
+          "guessWord(sessionId, payload)": "Promise<SessionSnapshot>"
+        },
+        "zod": {
+          "GuessDirectionSchema": "z.enum([\"across\", \"down\"])",
+          "GuessLetterRequestSchema": {
+            "type": "z.object({...}).strict()",
+            "player_number": "z.union([z.literal(1), z.literal(2)])",
+            "cell_index": "z.number().int().min(0).max(24)",
+            "letter": "z.string().regex(/^[A-Za-z]$/)"
+          },
+          "GuessWordRequestSchema": {
+            "type": "z.object({...}).strict()",
+            "player_number": "z.union([z.literal(1), z.literal(2)])",
+            "direction": "GuessDirectionSchema",
+            "index": "z.number().int().min(0).max(4)",
+            "word": "z.string().regex(/^[A-Za-z]{5}$/)"
+          },
+          "AutoRevealCellSchema": {
+            "type": "z.object({...}).strict()",
+            "cell_index": "z.number().int().min(0).max(24)",
+            "row": "z.number().int().min(0).max(4)",
+            "col": "z.number().int().min(0).max(4)",
+            "letter": "z.string().regex(/^[A-Z]$/)"
+          },
+          "LetterGuessedEventDataSchema": {
+            "type": "z.object({...}).strict().superRefine(...)",
+            "cell_index": "z.number().int().min(0).max(24)",
+            "row": "z.number().int().min(0).max(4)",
+            "col": "z.number().int().min(0).max(4)",
+            "guess": "z.string().regex(/^[A-Z]$/)",
+            "correct": "z.boolean()",
+            "revealed_letter": "z.string().regex(/^[A-Z]$/).nullable()",
+            "score_delta": "z.number().int()",
+            "opponent_score_delta": "z.number().int()",
+            "locks_enqueued": "z.array(z.number().int().min(0).max(24))",
+            "superRefine": [
+              "if correct=true then revealed_letter must be non-null",
+              "if correct=false then revealed_letter must be null"
+            ]
+          },
+          "WordRevealedCellSchema": {
+            "type": "z.object({...}).strict()",
+            "cell_index": "z.number().int().min(0).max(24)",
+            "row": "z.number().int().min(0).max(4)",
+            "col": "z.number().int().min(0).max(4)",
+            "letter": "z.string().regex(/^[A-Z]$/)"
+          },
+          "WordGuessedEventDataSchema": {
+            "type": "z.object({...}).strict()",
+            "direction": "GuessDirectionSchema",
+            "index": "z.number().int().min(0).max(4)",
+            "guess": "z.string().regex(/^[A-Z]{5}$/)",
+            "correct": "z.boolean()",
+            "score_delta": "z.number().int()",
+            "opponent_score_delta": "z.number().int()",
+            "revealed_cells": "z.array(WordRevealedCellSchema)",
+            "auto_reveals": "z.array(AutoRevealCellSchema)",
+            "locks_enqueued": "z.array(z.number().int().min(0).max(24))"
+          }
+        }
+      },
+      "schemas": [],
+      "files_created": [
+        "build-manifest.json",
+        "src/components/session/ask-question-panel.tsx",
+        "src/components/session/guess-confirm-dialog.tsx",
+        "src/components/session/guess-panel.tsx",
+        "src/components/session/turn-panel.tsx",
+        "src/lib/api/guess-events.ts",
+        "src/lib/api/guess-types.ts",
+        "src/lib/api/sessions.ts",
+        "src/pages/session.tsx"
+      ],
+      "decisions": [
+        "Introduced TurnPanel with local mode state (`ask` default) so Ask and Guess flows are mutually exclusive and answer capture is hidden while guessing.",
+        "Kept backend authoritative: client only gates unavailable targets (revealed/locked cell checks and row/col word eligibility) and still relies on backend errors for enforcement.",
+        "Implemented two RHF+zod forms (letter/word) with strict regex validation and explicit confirmation dialog before submit.",
+        "Added shared speech capture controls inside GuessPanel to support voice-first input while keeping typed input available at all times.",
+        "Result summaries parse `snapshot.last_event.event_data` with new guess event schemas; snapshot state remains canonical for board/scores/turn updates.",
+        "Confirmation dialog closes on API error and mapped API codes are surfaced with user-facing toast copy for the FE-5 contract error set."
+      ],
+      "environment_variables": [],
+      "enums": [
+        {
+          "name": "GuessDirection",
+          "values": [
+            "across",
+            "down"
+          ],
+          "layers": [
+            "python_api",
+            "zod"
+          ]
+        }
+      ],
+      "response_schemas": [
+        {
+          "endpoint": "POST /sessions/{session_id}/guess-letter",
+          "responses": {
+            "200": {
+              "session_id": {
+                "type": "string (uuid)",
+                "nullable": false
+              },
+              "created_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "updated_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "status": {
+                "type": "\"in_progress\" | \"complete\"",
+                "nullable": false
+              },
+              "current_turn": {
+                "type": "1 | 2",
+                "nullable": false
+              },
+              "topics": {
+                "type": "array",
+                "nullable": false,
+                "items": {
+                  "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                  "nullable": false
+                }
+              },
+              "players": {
+                "type": "array(length=2)",
+                "nullable": false
+              },
+              "last_event": {
+                "type": "object",
+                "nullable": true,
+                "fields": {
+                  "type": {
+                    "type": "\"question_asked\" | \"question_answered\" | \"letter_guessed\" | \"word_guessed\"",
+                    "nullable": false
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "event_data": {
+                    "type": "object",
+                    "nullable": false,
+                    "fields_when_type_letter_guessed": {
+                      "cell_index": {
+                        "type": "integer (0..24)",
+                        "nullable": false
+                      },
+                      "row": {
+                        "type": "integer (0..4)",
+                        "nullable": false
+                      },
+                      "col": {
+                        "type": "integer (0..4)",
+                        "nullable": false
+                      },
+                      "guess": {
+                        "type": "string (^[A-Z]$)",
+                        "nullable": false
+                      },
+                      "correct": {
+                        "type": "boolean",
+                        "nullable": false
+                      },
+                      "revealed_letter": {
+                        "type": "string (^[A-Z]$)",
+                        "nullable": true
+                      },
+                      "score_delta": {
+                        "type": "integer",
+                        "nullable": false
+                      },
+                      "opponent_score_delta": {
+                        "type": "integer",
+                        "nullable": false
+                      },
+                      "locks_enqueued": {
+                        "type": "array<integer (0..24)>",
+                        "nullable": false
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "non_2xx": {
+              "error": {
+                "type": "object",
+                "nullable": false,
+                "fields": {
+                  "code": {
+                    "type": "\"session_not_found\" | \"session_not_in_progress\" | \"out_of_turn\" | \"cell_already_revealed\" | \"cell_locked\" | \"validation_error\" | \"internal_error\" | string",
+                    "nullable": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "details": {
+                    "type": "unknown",
+                    "nullable": true,
+                    "optional": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "endpoint": "POST /sessions/{session_id}/guess-word",
+          "responses": {
+            "200": {
+              "session_id": {
+                "type": "string (uuid)",
+                "nullable": false
+              },
+              "created_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "updated_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "status": {
+                "type": "\"in_progress\" | \"complete\"",
+                "nullable": false
+              },
+              "current_turn": {
+                "type": "1 | 2",
+                "nullable": false
+              },
+              "topics": {
+                "type": "array",
+                "nullable": false,
+                "items": {
+                  "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                  "nullable": false
+                }
+              },
+              "players": {
+                "type": "array(length=2)",
+                "nullable": false
+              },
+              "last_event": {
+                "type": "object",
+                "nullable": true,
+                "fields": {
+                  "type": {
+                    "type": "\"question_asked\" | \"question_answered\" | \"letter_guessed\" | \"word_guessed\"",
+                    "nullable": false
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "event_data": {
+                    "type": "object",
+                    "nullable": false,
+                    "fields_when_type_word_guessed": {
+                      "direction": {
+                        "type": "\"across\" | \"down\"",
+                        "nullable": false
+                      },
+                      "index": {
+                        "type": "integer (0..4)",
+                        "nullable": false
+                      },
+                      "guess": {
+                        "type": "string (^[A-Z]{5}$)",
+                        "nullable": false
+                      },
+                      "correct": {
+                        "type": "boolean",
+                        "nullable": false
+                      },
+                      "score_delta": {
+                        "type": "integer",
+                        "nullable": false
+                      },
+                      "opponent_score_delta": {
+                        "type": "integer",
+                        "nullable": false
+                      },
+                      "revealed_cells": {
+                        "type": "array<object>",
+                        "nullable": false,
+                        "item_fields": {
+                          "cell_index": {
+                            "type": "integer (0..24)",
+                            "nullable": false
+                          },
+                          "row": {
+                            "type": "integer (0..4)",
+                            "nullable": false
+                          },
+                          "col": {
+                            "type": "integer (0..4)",
+                            "nullable": false
+                          },
+                          "letter": {
+                            "type": "string (^[A-Z]$)",
+                            "nullable": false
+                          }
+                        }
+                      },
+                      "auto_reveals": {
+                        "type": "array<object>",
+                        "nullable": false,
+                        "item_fields": {
+                          "cell_index": {
+                            "type": "integer (0..24)",
+                            "nullable": false
+                          },
+                          "row": {
+                            "type": "integer (0..4)",
+                            "nullable": false
+                          },
+                          "col": {
+                            "type": "integer (0..4)",
+                            "nullable": false
+                          },
+                          "letter": {
+                            "type": "string (^[A-Z]$)",
+                            "nullable": false
+                          }
+                        }
+                      },
+                      "locks_enqueued": {
+                        "type": "array<integer (0..24)>",
+                        "nullable": false
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "non_2xx": {
+              "error": {
+                "type": "object",
+                "nullable": false,
+                "fields": {
+                  "code": {
+                    "type": "\"session_not_found\" | \"session_not_in_progress\" | \"out_of_turn\" | \"word_already_revealed\" | \"word_locked\" | \"validation_error\" | \"internal_error\" | string",
+                    "nullable": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "details": {
+                    "type": "unknown",
+                    "nullable": true,
+                    "optional": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

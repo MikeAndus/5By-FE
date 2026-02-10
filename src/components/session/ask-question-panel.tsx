@@ -4,7 +4,6 @@ import { Lock } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { AnswerCapturePanel } from "@/components/session/answer-capture-panel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -290,177 +289,169 @@ export const AskQuestionPanel = ({
   };
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Ask a Question</CardTitle>
-          <CardDescription>
-            Choose an unrevealed square and one canonical topic for the active player.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <Form {...form}>
-            <form className="space-y-6" onSubmit={form.handleSubmit(handleAskQuestion)}>
-              <FormField
-                control={form.control}
-                name="cell_index"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Select square</FormLabel>
-                    <FormControl>
-                      <div className="grid grid-cols-5 gap-2">
-                        {orderedCells.map((cell) => {
-                          const isSelected = field.value === cell.index;
-                          const isRevealed = cell.revealed;
+    <Card>
+      <CardHeader>
+        <CardTitle>Ask a Question</CardTitle>
+        <CardDescription>
+          Choose an unrevealed square and one canonical topic for the active player.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <Form {...form}>
+          <form className="space-y-6" onSubmit={form.handleSubmit(handleAskQuestion)}>
+            <FormField
+              control={form.control}
+              name="cell_index"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Select square</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-5 gap-2">
+                      {orderedCells.map((cell) => {
+                        const isSelected = field.value === cell.index;
+                        const isRevealed = cell.revealed;
 
-                          return (
-                            <Button
-                              aria-label={buildCellAriaLabel(
-                                cell.row,
-                                cell.col,
-                                cell.locked,
-                                isRevealed,
-                              )}
-                              aria-pressed={isSelected}
-                              className={cn(
-                                "relative h-12 min-h-[48px] min-w-[48px] w-12 p-0 text-base",
-                                isRevealed &&
-                                  "cursor-not-allowed border-brand-accentLavender bg-brand-accentLavender/30 text-brand-accentBlue",
-                                isSelected &&
-                                  "ring-2 ring-brand-accentPeriwinkle ring-offset-2",
-                              )}
-                              disabled={isRevealed || isSubmitting}
-                              key={cell.index}
-                              onClick={() => {
-                                field.onChange(cell.index);
-                              }}
-                              type="button"
-                              variant={isSelected ? "default" : "outline"}
-                            >
-                              <span>{isRevealed ? cell.letter : "•"}</span>
-                              {cell.locked ? (
-                                <Lock
-                                  aria-hidden="true"
-                                  className="absolute right-1 top-1 h-3.5 w-3.5"
-                                />
-                              ) : null}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Revealed squares are disabled. Locked squares are selectable and marked with
-                      a lock.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="topic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Select topic</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-wrap gap-2">
-                        {snapshot.topics.map((topic) => {
-                          const isSelected = field.value === topic;
-
-                          return (
-                            <Button
-                              aria-pressed={isSelected}
-                              className={cn("min-h-[44px]", isSelected && "ring-2 ring-offset-2")}
-                              disabled={isSubmitting}
-                              key={topic}
-                              onClick={() => {
-                                field.onChange(topic);
-                              }}
-                              type="button"
-                              variant={isSelected ? "default" : "outline"}
-                            >
-                              {topic}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {selectedCell ? (
-                <p className="text-sm text-brand-accentBlue">
-                  Selected cell topics used: {selectedCell.topics_used.length}/5
-                </p>
-              ) : null}
-
-              <Button disabled={isSubmitting} type="submit">
-                {isSubmitting ? "Asking..." : "Ask Question"}
-              </Button>
-            </form>
-          </Form>
-
-          <div className="space-y-4 rounded-lg border border-brand-accentLavender bg-brand-secondary/40 p-4">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-brand-accentBlue">
-                Question
-              </p>
-              {latestQuestion ? (
-                <div className="space-y-2">
-                  <p className="text-base font-semibold text-brand-primary">{latestQuestion.text}</p>
-                  <p className="text-sm text-brand-accentBlue">
-                    Topic: {latestQuestion.topic} | Row {latestQuestion.row + 1}, Col{" "}
-                    {latestQuestion.col + 1}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm text-brand-accentBlue">
-                  Ask a question to display the latest prompt here.
-                </p>
+                        return (
+                          <Button
+                            aria-label={buildCellAriaLabel(
+                              cell.row,
+                              cell.col,
+                              cell.locked,
+                              isRevealed,
+                            )}
+                            aria-pressed={isSelected}
+                            className={cn(
+                              "relative h-12 min-h-[48px] min-w-[48px] w-12 p-0 text-base",
+                              isRevealed &&
+                                "cursor-not-allowed border-brand-accentLavender bg-brand-accentLavender/30 text-brand-accentBlue",
+                              isSelected &&
+                                "ring-2 ring-brand-accentPeriwinkle ring-offset-2",
+                            )}
+                            disabled={isRevealed || isSubmitting}
+                            key={cell.index}
+                            onClick={() => {
+                              field.onChange(cell.index);
+                            }}
+                            type="button"
+                            variant={isSelected ? "default" : "outline"}
+                          >
+                            <span>{isRevealed ? cell.letter : "•"}</span>
+                            {cell.locked ? (
+                              <Lock
+                                aria-hidden="true"
+                                className="absolute right-1 top-1 h-3.5 w-3.5"
+                              />
+                            ) : null}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Revealed squares are disabled. Locked squares are selectable and marked with a
+                    lock.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
+            />
 
-            <div className="space-y-2 border-t border-brand-accentLavender pt-3">
-              <p className="text-sm font-semibold uppercase tracking-wide text-brand-accentBlue">
-                TTS / Status
+            <FormField
+              control={form.control}
+              name="topic"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Select topic</FormLabel>
+                  <FormControl>
+                    <div className="flex flex-wrap gap-2">
+                      {snapshot.topics.map((topic) => {
+                        const isSelected = field.value === topic;
+
+                        return (
+                          <Button
+                            aria-pressed={isSelected}
+                            className={cn("min-h-[44px]", isSelected && "ring-2 ring-offset-2")}
+                            disabled={isSubmitting}
+                            key={topic}
+                            onClick={() => {
+                              field.onChange(topic);
+                            }}
+                            type="button"
+                            variant={isSelected ? "default" : "outline"}
+                          >
+                            {topic}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {selectedCell ? (
+              <p className="text-sm text-brand-accentBlue">
+                Selected cell topics used: {selectedCell.topics_used.length}/5
               </p>
-              <p className="text-sm">{getTtsStatusText(ttsStatus)}</p>
-              <p className="text-sm text-brand-accentBlue">{systemMessage}</p>
-            </div>
+            ) : null}
 
-            <div className="flex flex-wrap gap-2 border-t border-brand-accentLavender pt-3">
-              <Button
-                disabled={!latestQuestion || isSubmitting}
-                onClick={() => {
-                  void handleRepeatQuestion();
-                }}
-                type="button"
-                variant="secondary"
-              >
-                Repeat question
-              </Button>
-              <Button
-                disabled={isSubmitting}
-                onClick={handleSkipTurnStub}
-                type="button"
-                variant="outline"
-              >
-                Skip turn
-              </Button>
-            </div>
+            <Button disabled={isSubmitting} type="submit">
+              {isSubmitting ? "Asking..." : "Ask Question"}
+            </Button>
+          </form>
+        </Form>
+
+        <div className="space-y-4 rounded-lg border border-brand-accentLavender bg-brand-secondary/40 p-4">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold uppercase tracking-wide text-brand-accentBlue">
+              Question
+            </p>
+            {latestQuestion ? (
+              <div className="space-y-2">
+                <p className="text-base font-semibold text-brand-primary">{latestQuestion.text}</p>
+                <p className="text-sm text-brand-accentBlue">
+                  Topic: {latestQuestion.topic} | Row {latestQuestion.row + 1}, Col{" "}
+                  {latestQuestion.col + 1}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-brand-accentBlue">
+                Ask a question to display the latest prompt here.
+              </p>
+            )}
           </div>
-        </CardContent>
-      </Card>
 
-      <AnswerCapturePanel
-        onSnapshotUpdate={onSnapshotUpdate}
-        sessionId={sessionId}
-        snapshot={snapshot}
-      />
-    </div>
+          <div className="space-y-2 border-t border-brand-accentLavender pt-3">
+            <p className="text-sm font-semibold uppercase tracking-wide text-brand-accentBlue">
+              TTS / Status
+            </p>
+            <p className="text-sm">{getTtsStatusText(ttsStatus)}</p>
+            <p className="text-sm text-brand-accentBlue">{systemMessage}</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-t border-brand-accentLavender pt-3">
+            <Button
+              disabled={!latestQuestion || isSubmitting}
+              onClick={() => {
+                void handleRepeatQuestion();
+              }}
+              type="button"
+              variant="secondary"
+            >
+              Repeat question
+            </Button>
+            <Button
+              disabled={isSubmitting}
+              onClick={handleSkipTurnStub}
+              type="button"
+              variant="outline"
+            >
+              Skip turn
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

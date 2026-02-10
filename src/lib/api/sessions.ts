@@ -8,6 +8,12 @@ import {
   type AnswerQuestionRequest,
 } from "@/lib/api/answer";
 import {
+  GuessLetterRequestSchema,
+  GuessWordRequestSchema,
+  type GuessLetterRequest,
+  type GuessWordRequest,
+} from "@/lib/api/guess-types";
+import {
   SessionSnapshotSchema,
   type SessionSnapshot,
 } from "@/lib/api/session-snapshot";
@@ -41,6 +47,30 @@ export const answerQuestion = async (
   const body = AnswerQuestionRequestSchema.parse(payload);
 
   return apiRequest(`/sessions/${sessionId}/answer`, SessionSnapshotSchema, {
+    method: "POST",
+    body,
+  });
+};
+
+export const guessLetter = async (
+  sessionId: string,
+  payload: GuessLetterRequest,
+): Promise<SessionSnapshot> => {
+  const body = GuessLetterRequestSchema.parse(payload);
+
+  return apiRequest(`/sessions/${sessionId}/guess-letter`, SessionSnapshotSchema, {
+    method: "POST",
+    body,
+  });
+};
+
+export const guessWord = async (
+  sessionId: string,
+  payload: GuessWordRequest,
+): Promise<SessionSnapshot> => {
+  const body = GuessWordRequestSchema.parse(payload);
+
+  return apiRequest(`/sessions/${sessionId}/guess-word`, SessionSnapshotSchema, {
     method: "POST",
     body,
   });
