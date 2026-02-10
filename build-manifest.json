@@ -1,5 +1,88 @@
 {
   "last_updated_by": null,
   "last_updated_at": null,
-  "nodes": {}
+  "nodes": {
+    "FE-0": {
+      "title": "Frontend Scaffold (React PWA)",
+      "completed_at": "2026-02-10T06:33:16Z",
+      "contracts": [
+        {
+          "name": "FrontendRoutes",
+          "kind": "routing",
+          "schema": {
+            "/": {
+              "params": {},
+              "description": "Create/New Game placeholder screen"
+            },
+            "/s/:sessionId": {
+              "params": {
+                "sessionId": "string"
+              },
+              "description": "In-session placeholder screen"
+            },
+            "/game-over": {
+              "params": {},
+              "description": "Game-over placeholder screen"
+            }
+          }
+        }
+      ],
+      "schemas": [],
+      "files_created": [
+        ".env.example",
+        ".gitignore",
+        "README.md",
+        "build-manifest.json",
+        "components.json",
+        "index.html",
+        "package-lock.json",
+        "package.json",
+        "postcss.config.cjs",
+        "public/icons/apple-touch-icon.png",
+        "public/icons/icon-192.png",
+        "public/icons/icon-512.png",
+        "public/icons/maskable-512.png",
+        "public/manifest.webmanifest",
+        "src/App.tsx",
+        "src/components/brand/Logo.tsx",
+        "src/components/layout/AppFooter.tsx",
+        "src/components/layout/AppHeader.tsx",
+        "src/components/layout/AppLayout.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/button.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/input.tsx",
+        "src/components/ui/label.tsx",
+        "src/components/ui/separator.tsx",
+        "src/components/ui/skeleton.tsx",
+        "src/components/ui/sonner.tsx",
+        "src/lib/utils.ts",
+        "src/main.tsx",
+        "src/pages/GameOverPage.tsx",
+        "src/pages/NewGamePage.tsx",
+        "src/pages/SessionPage.tsx",
+        "src/pwa/registerSW.ts",
+        "src/routes/index.tsx",
+        "src/styles/globals.css",
+        "src/vite-env.d.ts",
+        "tailwind.config.ts",
+        "tsconfig.json",
+        "tsconfig.node.json",
+        "vite.config.ts"
+      ],
+      "decisions": [
+        "Routing uses react-router-dom with BrowserRouter and explicit placeholders for '/', '/s/:sessionId', '/game-over', plus a not-found fallback.",
+        "PWA is implemented with vite-plugin-pwa using autoUpdate registration via virtual:pwa-register and generated service worker assets.",
+        "Workbox generation runs with 'mode: development' to avoid an environment-specific terser crash during service worker generation.",
+        "ShadCN-compatible setup is established with components under src/components/ui, utility cn() in src/lib/utils.ts, and components.json mappings.",
+        "Theme tokens map canon colors into Tailwind and ShadCN-compatible CSS variables; fonts are Syne (headings) and Archivo (body) loaded in index.html."
+      ],
+      "environment_variables": [
+        {
+          "key": "VITE_API_BASE_URL",
+          "description": "Reserved API base URL placeholder for downstream frontend-backend integration."
+        }
+      ]
+    }
+  }
 }

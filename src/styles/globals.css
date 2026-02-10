@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 41 61% 95%;
+    --foreground: 257 85% 16%;
+    --card: 41 61% 97%;
+    --card-foreground: 257 85% 16%;
+    --popover: 41 61% 97%;
+    --popover-foreground: 257 85% 16%;
+    --primary: 257 85% 16%;
+    --primary-foreground: 41 61% 95%;
+    --secondary: 41 61% 95%;
+    --secondary-foreground: 257 85% 16%;
+    --muted: 251 67% 90%;
+    --muted-foreground: 233 55% 32%;
+    --accent: 251 67% 90%;
+    --accent-foreground: 257 85% 16%;
+    --destructive: 18 100% 50%;
+    --destructive-foreground: 41 61% 95%;
+    --border: 20 14% 61%;
+    --input: 20 14% 61%;
+    --ring: 235 100% 74%;
+    --radius: 0.9rem;
+  }
+
+  .dark {
+    --background: 257 85% 16%;
+    --foreground: 41 61% 95%;
+    --card: 257 85% 18%;
+    --card-foreground: 41 61% 95%;
+    --popover: 257 85% 18%;
+    --popover-foreground: 41 61% 95%;
+    --primary: 41 61% 95%;
+    --primary-foreground: 257 85% 16%;
+    --secondary: 233 85% 32%;
+    --secondary-foreground: 41 61% 95%;
+    --muted: 233 45% 28%;
+    --muted-foreground: 251 67% 90%;
+    --accent: 233 85% 32%;
+    --accent-foreground: 41 61% 95%;
+    --destructive: 18 100% 50%;
+    --destructive-foreground: 41 61% 95%;
+    --border: 233 45% 35%;
+    --input: 233 45% 35%;
+    --ring: 235 100% 74%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-display {
+    font-family: "Syne", sans-serif;
+  }
+}
