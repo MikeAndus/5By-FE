@@ -11,16 +11,19 @@ export const AskQuestionRequestSchema = z
 
 export type AskQuestionRequest = z.infer<typeof AskQuestionRequestSchema>;
 
+export const QuestionGeneratorSchema = z.enum(["stub_v1", "openai_responses_v1"]);
+export type QuestionGenerator = z.infer<typeof QuestionGeneratorSchema>;
+
 export const QuestionAskedEventDataSchema = z
   .object({
     cell_index: z.number().int().min(0).max(24),
     row: z.number().int().min(0).max(4),
     col: z.number().int().min(0).max(4),
     topic: TopicSchema,
-    question_text: z.string().max(500),
+    question_text: z.string().min(1).max(500),
     answer: z.string().min(1),
     acceptable_variants: z.array(z.string().min(1)).min(1),
-    generator: z.literal("stub_v1"),
+    generator: QuestionGeneratorSchema,
   })
   .strict();
 

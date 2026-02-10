@@ -1201,6 +1201,321 @@
           }
         }
       ]
+    },
+    "FE-4": {
+      "title": "STT answer capture with transcript correction, typed fallback, and /answer turn submission",
+      "completed_at": "2026-02-10T20:15:59Z",
+      "contracts": {
+        "typescript": {
+          "QuestionGenerator": "\"stub_v1\" | \"openai_responses_v1\"",
+          "AnswerQuestionRequest": {
+            "player_number": "1 | 2",
+            "answer": "string (trimmed, min 1, max 100)"
+          },
+          "QuestionAnsweredEventData": {
+            "cell_index": "number (int, 0..24)",
+            "row": "number (int, 0..4)",
+            "col": "number (int, 0..4)",
+            "topic": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+            "answer": "string (min 1)",
+            "correct": "boolean",
+            "revealed_letter": "string (^[A-Z]$) | null",
+            "lock_cleared_cell_index": "number (int, 0..24) | null"
+          },
+          "answerQuestion(sessionId, payload)": "Promise<SessionSnapshot>",
+          "StartListeningOptions": {
+            "lang": "string (optional, default \"en-US\")",
+            "interimResults": "boolean (optional, default true)",
+            "onStatus": "\"listening\" | \"stopped\" callback",
+            "onInterimTranscript": "(text: string) => void",
+            "onFinalTranscript": "(text: string) => void",
+            "onError": "(error: { code: string; message: string }) => void"
+          }
+        },
+        "zod": {
+          "QuestionGeneratorSchema": "z.enum([\"stub_v1\", \"openai_responses_v1\"])",
+          "QuestionAskedEventDataSchema.generator": "QuestionGeneratorSchema",
+          "QuestionAskedEventDataSchema.question_text": "z.string().min(1).max(500)",
+          "AnswerQuestionRequestSchema": {
+            "type": "z.object({...}).strict()",
+            "player_number": "z.union([z.literal(1), z.literal(2)])",
+            "answer": "z.string().trim().min(1).max(100)"
+          },
+          "QuestionAnsweredEventDataSchema": {
+            "type": "z.object({...}).strict().superRefine(...)",
+            "cell_index": "z.number().int().min(0).max(24)",
+            "row": "z.number().int().min(0).max(4)",
+            "col": "z.number().int().min(0).max(4)",
+            "topic": "TopicSchema",
+            "answer": "z.string().min(1)",
+            "correct": "z.boolean()",
+            "revealed_letter": "z.string().regex(/^[A-Z]$/).nullable()",
+            "lock_cleared_cell_index": "z.number().int().min(0).max(24).nullable()",
+            "superRefine": [
+              "if correct=true then revealed_letter must be non-null",
+              "if correct=false then revealed_letter must be null"
+            ]
+          }
+        }
+      },
+      "schemas": [],
+      "files_created": [
+        "build-manifest.json",
+        "src/components/session/answer-capture-panel.tsx",
+        "src/components/session/ask-question-panel.tsx",
+        "src/lib/api/answer.ts",
+        "src/lib/api/ask.ts",
+        "src/lib/api/sessions.ts",
+        "src/lib/voice/stt.ts",
+        "src/types/speech-recognition.d.ts"
+      ],
+      "decisions": [
+        "Kept answer capture backend-authoritative by deriving control gating from snapshot.last_event type and rendering correctness messaging only from question_answered event payload.",
+        "Implemented STT wrapper around SpeechRecognition/webkitSpeechRecognition with no uncaught throws, stable frontend error codes, and idempotent stop behavior for mobile browser variance.",
+        "Integrated AnswerCapturePanel under AskQuestionPanel so ask/repeat TTS and answer capture remain colocated while preserving existing question flow.",
+        "Used zod + react-hook-form for answer input validation and reused AnswerQuestionRequestSchema answer constraints via pick({ answer: true }).",
+        "Reset local STT/transcript/form state whenever question key changes (question_asked created_at) and after answer submission to prevent stale transcripts across turns."
+      ],
+      "environment_variables": [],
+      "enums": [
+        {
+          "name": "QuestionGenerator",
+          "values": [
+            "stub_v1",
+            "openai_responses_v1"
+          ],
+          "layers": [
+            "python_api",
+            "zod"
+          ]
+        }
+      ],
+      "response_schemas": [
+        {
+          "endpoint": "POST /sessions/{session_id}/ask",
+          "responses": {
+            "200": {
+              "session_id": {
+                "type": "string (uuid)",
+                "nullable": false
+              },
+              "created_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "updated_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "status": {
+                "type": "\"in_progress\" | \"complete\"",
+                "nullable": false
+              },
+              "current_turn": {
+                "type": "1 | 2",
+                "nullable": false
+              },
+              "topics": {
+                "type": "array",
+                "nullable": false,
+                "items": {
+                  "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                  "nullable": false
+                }
+              },
+              "players": {
+                "type": "array(length=2)",
+                "nullable": false
+              },
+              "last_event": {
+                "type": "object",
+                "nullable": true,
+                "fields": {
+                  "type": {
+                    "type": "\"question_asked\" | \"question_answered\" | \"letter_guessed\" | \"word_guessed\"",
+                    "nullable": false
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "event_data": {
+                    "type": "object",
+                    "nullable": false,
+                    "fields_when_type_question_asked": {
+                      "cell_index": {
+                        "type": "integer (0..24)",
+                        "nullable": false
+                      },
+                      "row": {
+                        "type": "integer (0..4)",
+                        "nullable": false
+                      },
+                      "col": {
+                        "type": "integer (0..4)",
+                        "nullable": false
+                      },
+                      "topic": {
+                        "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                        "nullable": false
+                      },
+                      "question_text": {
+                        "type": "string (1..500)",
+                        "nullable": false
+                      },
+                      "answer": {
+                        "type": "string (min 1)",
+                        "nullable": false
+                      },
+                      "acceptable_variants": {
+                        "type": "array<string>(min length 1)",
+                        "nullable": false
+                      },
+                      "generator": {
+                        "type": "\"stub_v1\" | \"openai_responses_v1\"",
+                        "nullable": false
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "non_2xx": {
+              "error": {
+                "type": "object",
+                "nullable": false,
+                "fields": {
+                  "code": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "details": {
+                    "type": "unknown",
+                    "nullable": true,
+                    "optional": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "endpoint": "POST /sessions/{session_id}/answer",
+          "responses": {
+            "200": {
+              "session_id": {
+                "type": "string (uuid)",
+                "nullable": false
+              },
+              "created_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "updated_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "status": {
+                "type": "\"in_progress\" | \"complete\"",
+                "nullable": false
+              },
+              "current_turn": {
+                "type": "1 | 2",
+                "nullable": false
+              },
+              "topics": {
+                "type": "array",
+                "nullable": false,
+                "items": {
+                  "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                  "nullable": false
+                }
+              },
+              "players": {
+                "type": "array(length=2)",
+                "nullable": false
+              },
+              "last_event": {
+                "type": "object",
+                "nullable": true,
+                "fields": {
+                  "type": {
+                    "type": "\"question_asked\" | \"question_answered\" | \"letter_guessed\" | \"word_guessed\"",
+                    "nullable": false
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "event_data": {
+                    "type": "object",
+                    "nullable": false,
+                    "fields_when_type_question_answered": {
+                      "cell_index": {
+                        "type": "integer (0..24)",
+                        "nullable": false
+                      },
+                      "row": {
+                        "type": "integer (0..4)",
+                        "nullable": false
+                      },
+                      "col": {
+                        "type": "integer (0..4)",
+                        "nullable": false
+                      },
+                      "topic": {
+                        "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                        "nullable": false
+                      },
+                      "answer": {
+                        "type": "string (min 1)",
+                        "nullable": false
+                      },
+                      "correct": {
+                        "type": "boolean",
+                        "nullable": false
+                      },
+                      "revealed_letter": {
+                        "type": "string (^[A-Z]$)",
+                        "nullable": true
+                      },
+                      "lock_cleared_cell_index": {
+                        "type": "integer (0..24)",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "non_2xx": {
+              "error": {
+                "type": "object",
+                "nullable": false,
+                "fields": {
+                  "code": {
+                    "type": "\"out_of_turn\" | \"no_pending_question\" | \"session_not_in_progress\" | \"session_not_found\" | string",
+                    "nullable": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "details": {
+                    "type": "unknown",
+                    "nullable": true,
+                    "optional": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

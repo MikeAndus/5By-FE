@@ -4,6 +4,10 @@ import {
   type AskQuestionRequest,
 } from "@/lib/api/ask";
 import {
+  AnswerQuestionRequestSchema,
+  type AnswerQuestionRequest,
+} from "@/lib/api/answer";
+import {
   SessionSnapshotSchema,
   type SessionSnapshot,
 } from "@/lib/api/session-snapshot";
@@ -25,6 +29,18 @@ export const askQuestion = async (
   const body = AskQuestionRequestSchema.parse(payload);
 
   return apiRequest(`/sessions/${sessionId}/ask`, SessionSnapshotSchema, {
+    method: "POST",
+    body,
+  });
+};
+
+export const answerQuestion = async (
+  sessionId: string,
+  payload: AnswerQuestionRequest,
+): Promise<SessionSnapshot> => {
+  const body = AnswerQuestionRequestSchema.parse(payload);
+
+  return apiRequest(`/sessions/${sessionId}/answer`, SessionSnapshotSchema, {
     method: "POST",
     body,
   });
