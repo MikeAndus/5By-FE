@@ -1,6 +1,23 @@
 import { ZodError } from "zod";
 import { apiFetch } from "@/lib/api/http";
-import { SessionSnapshotSchema, type SessionSnapshot } from "@/lib/api/schemas";
+import {
+  CreateSessionRequestSchema,
+  SessionSnapshotSchema,
+  type CreateSessionRequest,
+  type SessionSnapshot
+} from "@/lib/api/schemas";
+
+const parseSessionSnapshot = (payload: unknown): SessionSnapshot => {
+  try {
+    return SessionSnapshotSchema.parse(payload);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new Error("Unexpected server response.");
+    }
+
+    throw error;
+  }
+};
 
 export const getSessionSnapshot = async (
   sessionId: string,
@@ -13,13 +30,26 @@ export const getSessionSnapshot = async (
 
   const payload = await apiFetch<unknown>(`/sessions/${encodeURIComponent(sessionId)}`, requestInit);
 
-  try {
-    return SessionSnapshotSchema.parse(payload);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      throw new Error("Received an invalid session snapshot from the server.");
-    }
+  return parseSessionSnapshot(payload);
+};
 
-    throw error;
+export const createSession = async (
+  payload: CreateSessionRequest,
+  signal?: AbortSignal
+): Promise<SessionSnapshot> => {
+  const parsedPayload = CreateSessionRequestSchema.parse(payload);
+  const requestInit: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(parsedPayload)
+  };
+
+  if (signal) {
+    requestInit.signal = signal;
   }
+
+  const responsePayload = await apiFetch<unknown>("/sessions", requestInit);
+  return parseSessionSnapshot(responsePayload);
 };

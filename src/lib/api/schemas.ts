@@ -64,4 +64,12 @@ export const SessionSnapshotSchema = z
   })
   .strict();
 
+export const CreateSessionRequestSchema = z
+  .object({
+    player_1_name: z.string().min(1).max(30).nullable(),
+    player_2_name: z.string().min(1).max(30).nullable()
+  })
+  .strict();
+
+export type CreateSessionRequest = z.infer<typeof CreateSessionRequestSchema>;
 export type SessionSnapshot = z.infer<typeof SessionSnapshotSchema>;

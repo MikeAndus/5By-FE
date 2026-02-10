@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getSessionSnapshot } from "@/lib/api/sessions";
+import { ApiError } from "@/lib/api/http";
 import type { SessionSnapshot } from "@/lib/api/schemas";
 
 interface SessionStoreState {
@@ -7,8 +8,10 @@ interface SessionStoreState {
   snapshot: SessionSnapshot | null;
   loading: boolean;
   error: string | null;
+  errorStatus: number | null;
   lastLoadedAt: number | null;
   setSessionId: (sessionId: string | null) => void;
+  hydrate: (sessionId: string, snapshot: SessionSnapshot) => void;
   loadSession: (sessionId: string) => Promise<void>;
   refresh: () => Promise<void>;
   clear: () => void;
@@ -19,6 +22,7 @@ const INITIAL_STATE = {
   snapshot: null,
   loading: false,
   error: null,
+  errorStatus: null,
   lastLoadedAt: null
 } as const;
 
@@ -37,6 +41,16 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
   setSessionId: (sessionId) => {
     set({ sessionId });
   },
+  hydrate: (sessionId, snapshot) => {
+    set({
+      sessionId,
+      snapshot,
+      loading: false,
+      error: null,
+      errorStatus: null,
+      lastLoadedAt: Date.now()
+    });
+  },
   loadSession: async (sessionId) => {
     if (activeRequestController) {
       activeRequestController.abort();
@@ -44,12 +58,16 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
 
     const controller = new AbortController();
     activeRequestController = controller;
+    const state = get();
+    const existingSnapshot = state.sessionId === sessionId ? state.snapshot : null;
+    const existingLastLoadedAt = state.sessionId === sessionId ? state.lastLoadedAt : null;
 
     set({
       sessionId,
-      snapshot: null,
+      snapshot: existingSnapshot,
       loading: true,
-      error: null
+      error: null,
+      errorStatus: null
     });
 
     try {
@@ -64,6 +82,7 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
         snapshot,
         loading: false,
         error: null,
+        errorStatus: null,
         lastLoadedAt: Date.now()
       });
     } catch (error) {
@@ -76,10 +95,11 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
       }
 
       set({
-        snapshot: null,
+        snapshot: existingSnapshot,
         loading: false,
         error: getErrorMessage(error),
-        lastLoadedAt: null
+        errorStatus: error instanceof ApiError ? error.status : null,
+        lastLoadedAt: existingLastLoadedAt
       });
     } finally {
       if (activeRequestController === controller) {

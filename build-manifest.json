@@ -223,6 +223,106 @@
         "Mobile-first accessibility baselines are enforced through global safe-area utilities, visible focus styles, and `tap-target` sizing integrated into button primitives."
       ],
       "environment_variables": []
+    },
+    "FE-2": {
+      "title": "Game Creation + Session Load Screens",
+      "completed_at": "2026-02-10T08:46:30Z",
+      "contracts": [
+        {
+          "name": "CreateSession",
+          "kind": "http",
+          "schema": {
+            "request": {
+              "method": "POST",
+              "path": "/sessions",
+              "body": {
+                "player_1_name": "string | null",
+                "player_2_name": "string | null"
+              }
+            },
+            "response_200": {
+              "session_id": "uuid",
+              "status": "in_progress | complete",
+              "current_turn": "1 | 2",
+              "players": [
+                {
+                  "player_number": "1 | 2",
+                  "name": "string | undefined",
+                  "score": "number",
+                  "grid_id": "uuid",
+                  "cells": [
+                    {
+                      "index": "0..24",
+                      "row": "0..4",
+                      "col": "0..4",
+                      "revealed": "boolean",
+                      "letter": "string | undefined",
+                      "locked": "boolean",
+                      "topics_used": "string[]",
+                      "revealed_by": "question | guess | auto | null"
+                    }
+                  ],
+                  "completed": "boolean"
+                }
+              ],
+              "last_event": {
+                "type": "string",
+                "result": "ok | error | undefined",
+                "message_to_speak": "string | undefined"
+              }
+            },
+            "error_responses": [
+              {
+                "status": 422,
+                "payload": "unknown"
+              },
+              {
+                "status": "5xx",
+                "payload": "unknown"
+              }
+            ]
+          }
+        },
+        {
+          "name": "SessionStoreStateV2",
+          "kind": "state-interface",
+          "schema": {
+            "sessionId": "string | null",
+            "snapshot": "SessionSnapshot | null",
+            "loading": "boolean",
+            "error": "string | null",
+            "errorStatus": "number | null",
+            "lastLoadedAt": "number | null",
+            "actions": {
+              "setSessionId(sessionId)": "void",
+              "hydrate(sessionId, snapshot)": "void",
+              "loadSession(sessionId)": "Promise<void>",
+              "refresh()": "Promise<void>",
+              "clear()": "void"
+            }
+          }
+        }
+      ],
+      "schemas": [],
+      "files_created": [
+        "build-manifest.json",
+        "src/components/session/ScoreboardCard.tsx",
+        "src/components/session/SessionLinkCard.tsx",
+        "src/lib/api/http.ts",
+        "src/lib/api/schemas.ts",
+        "src/lib/api/sessions.ts",
+        "src/lib/routing.ts",
+        "src/pages/NewGamePage.tsx",
+        "src/pages/SessionPage.tsx",
+        "src/state/sessionStore.ts"
+      ],
+      "decisions": [
+        "Name normalization uses Option A: trimmed empty player names are sent as explicit null values (`player_1_name`, `player_2_name`) in `POST /sessions` payloads.",
+        "Post-create navigation uses store hydration from the POST response (`hydrate(session_id, snapshot)`) to avoid a redundant GET before rendering `/s/:sessionId`.",
+        "UUID validation uses a shared regex helper (`isUuidLike`) in `src/lib/routing.ts` before any session load request is attempted.",
+        "Join-session input accepts either raw UUIDs or URLs containing `/s/{uuid}` via `parseSessionIdInput`."
+      ],
+      "environment_variables": []
     }
   }
 }
