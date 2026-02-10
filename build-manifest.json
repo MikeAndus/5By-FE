@@ -1,5 +1,146 @@
 {
   "last_updated_by": null,
   "last_updated_at": null,
-  "nodes": {}
+  "nodes": {
+    "FE-0": {
+      "title": "React 18 + Vite + TypeScript FE scaffold with Tailwind, ShadCN primitives, routing, and /health API client",
+      "completed_at": "2026-02-10T13:38:36Z",
+      "contracts": {
+        "typescript": {
+          "ApiError": {
+            "code": "string",
+            "message": "string",
+            "details": "unknown (optional)"
+          },
+          "ApiErrorResponse": {
+            "error": "ApiError"
+          },
+          "HealthResponse": {
+            "status": "'ok' | string",
+            "service": "'five-by-backend' | string",
+            "db": {
+              "status": "'ok' | string"
+            }
+          }
+        },
+        "zod": {
+          "ApiErrorSchema": {
+            "code": "z.string()",
+            "message": "z.string()",
+            "details": "z.unknown().optional()"
+          },
+          "ApiErrorResponseSchema": {
+            "error": "ApiErrorSchema"
+          },
+          "HealthResponseSchema": {
+            "status": "z.string()",
+            "service": "z.string()",
+            "db": {
+              "status": "z.string()"
+            }
+          }
+        }
+      },
+      "schemas": [],
+      "files_created": [
+        ".env.example",
+        ".eslintrc.cjs",
+        ".gitignore",
+        "README.md",
+        "build-manifest.json",
+        "components.json",
+        "index.html",
+        "package-lock.json",
+        "package.json",
+        "postcss.config.js",
+        "prettier.config.cjs",
+        "tailwind.config.ts",
+        "tsconfig.json",
+        "tsconfig.node.json",
+        "vite.config.ts",
+        "src/app/App.tsx",
+        "src/app/router.tsx",
+        "src/components/app-shell.tsx",
+        "src/components/ui/button.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/sonner.tsx",
+        "src/env.d.ts",
+        "src/lib/api/client.ts",
+        "src/lib/api/errors.ts",
+        "src/lib/api/health.ts",
+        "src/lib/api/types.ts",
+        "src/lib/toast.ts",
+        "src/lib/utils.ts",
+        "src/lib/voice/stt.ts",
+        "src/lib/voice/tts.ts",
+        "src/main.tsx",
+        "src/pages/home.tsx",
+        "src/pages/not-found.tsx",
+        "src/pages/session.tsx",
+        "src/styles/globals.css"
+      ],
+      "decisions": [
+        "Used npm as package manager because pnpm is unavailable in the execution environment.",
+        "Used createBrowserRouter with a RootLayout that wraps all routes in AppShell.",
+        "Mounted Sonner toaster globally via AppShell and centralized API error-to-toast mapping in src/lib/toast.ts.",
+        "Implemented a fetch wrapper that validates success/error payloads with zod and throws ApiClientError for all failure modes.",
+        "Added ShadCN-style primitives (button, card, sonner) under src/components/ui with @ alias to src."
+      ],
+      "environment_variables": [
+        {
+          "key": "VITE_API_BASE_URL",
+          "description": "Base URL used by the API client for backend requests (for FE-0, GET /health)."
+        }
+      ],
+      "enums": [],
+      "response_schemas": [
+        {
+          "endpoint": "GET /health",
+          "responses": {
+            "200": {
+              "status": {
+                "type": "string",
+                "nullable": false
+              },
+              "service": {
+                "type": "string",
+                "nullable": false
+              },
+              "db": {
+                "type": "object",
+                "nullable": false,
+                "fields": {
+                  "status": {
+                    "type": "string",
+                    "nullable": false
+                  }
+                }
+              }
+            },
+            "non_2xx": {
+              "error": {
+                "type": "object",
+                "nullable": false,
+                "fields": {
+                  "code": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "details": {
+                    "type": "unknown",
+                    "nullable": true,
+                    "optional": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
 }
