@@ -11,7 +11,7 @@ import type { PlayerSnapshot } from "@/lib/api/session-snapshot";
 
 interface PlayerScoreboardProps {
   players: PlayerSnapshot[];
-  currentTurn: number;
+  currentTurn: 1 | 2;
 }
 
 export const PlayerScoreboard = ({

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +22,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { ApiClientError } from "@/lib/api/errors";
+import { createSession } from "@/lib/api/sessions";
+import { toastApiError } from "@/lib/toast";
 
 const JoinSessionFormSchema = z.object({
   sessionId: z.string().uuid("Enter a valid session ID (UUID)."),
@@ -30,6 +34,7 @@ type JoinSessionFormValues = z.infer<typeof JoinSessionFormSchema>;
 
 export const HomePage = (): JSX.Element => {
   const navigate = useNavigate();
+  const [isCreating, setIsCreating] = useState(false);
 
   const form = useForm<JoinSessionFormValues>({
     resolver: zodResolver(JoinSessionFormSchema),
@@ -42,14 +47,21 @@ export const HomePage = (): JSX.Element => {
     navigate(`/s/${values.sessionId}`);
   };
 
-  const handleClickNewGame = (): void => {
-    const generatedSessionId = crypto.randomUUID();
+  const handleClickNewGame = async (): Promise<void> => {
+    try {
+      setIsCreating(true);
+      const snapshot = await createSession();
+      navigate(`/s/${snapshot.session_id}`);
+    } catch (error: unknown) {
+      if (error instanceof ApiClientError && error.code === "grids_unavailable") {
+        toast.error("Not enough grids available to create a new game. Please try again.");
+        return;
+      }
 
-    toast(
-      "Phase 1: session creation isn't implemented yet; you'll see 'Session not found' unless you created a session in the DB.",
-    );
-
-    navigate(`/s/${generatedSessionId}`);
+      toastApiError(error);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -97,16 +109,22 @@ export const HomePage = (): JSX.Element => {
           <CardHeader>
             <CardTitle>New Game</CardTitle>
             <CardDescription>
-              Phase 1 generates a local UUID and navigates to the session route.
+              Create a new anonymous session and open it by shareable URL.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-brand-accentBlue">
-              You can use this to jump directly to a session URL for backend-seeded
-              sessions.
+              This calls the backend session creator and routes to the new
+              <code className="px-1 font-mono"> /s/&lt;session_id&gt;</code> URL.
             </p>
-            <Button className="w-full" onClick={handleClickNewGame}>
-              Generate Session URL
+            <Button
+              className="w-full"
+              disabled={isCreating}
+              onClick={() => {
+                void handleClickNewGame();
+              }}
+            >
+              {isCreating ? "Creating..." : "New Game"}
             </Button>
           </CardContent>
         </Card>

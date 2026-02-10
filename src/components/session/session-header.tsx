@@ -14,7 +14,7 @@ import type { SessionStatus } from "@/lib/api/session-snapshot";
 interface SessionHeaderProps {
   sessionId: string;
   status: SessionStatus;
-  currentTurn: number;
+  currentTurn: 1 | 2;
   isRefreshing: boolean;
   onRefresh: () => void;
 }

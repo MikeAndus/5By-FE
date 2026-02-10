@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { z } from "zod";
 import { ActivePlayerCellsDebug } from "@/components/session/active-player-cells-debug";
+import { GameplayInstructions } from "@/components/session/gameplay-instructions";
 import { PlayerScoreboard } from "@/components/session/player-scoreboard";
 import { SessionHeader } from "@/components/session/session-header";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,11 @@ import { toastApiError } from "@/lib/toast";
 const SessionIdParamSchema = z.string().uuid();
 
 type SessionLoadStatus = "idle" | "loading" | "success" | "error";
+const POLL_INTERVAL_MS = 5000;
+
+interface FetchSnapshotOptions {
+  silent?: boolean;
+}
 
 interface ErrorStateCardProps {
   title: string;
@@ -62,44 +68,99 @@ export const SessionPage = (): JSX.Element => {
   const [status, setStatus] = useState<SessionLoadStatus>("idle");
   const [snapshot, setSnapshot] = useState<SessionSnapshot | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const snapshotRef = useRef<SessionSnapshot | null>(null);
 
   const parsedSessionId = SessionIdParamSchema.safeParse(sessionId);
   const validSessionId = parsedSessionId.success ? parsedSessionId.data : null;
 
-  const fetchSnapshot = useCallback(async (): Promise<void> => {
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+  }, [snapshot]);
+
+  const fetchSnapshot = useCallback(
+    async (options: FetchSnapshotOptions = {}): Promise<void> => {
+      const { silent = false } = options;
+
+      if (!validSessionId) {
+        return;
+      }
+
+      const hasSnapshot = snapshotRef.current !== null;
+
+      if (!silent) {
+        if (hasSnapshot) {
+          setIsRefreshing(true);
+        } else {
+          setStatus("loading");
+        }
+
+        setError(null);
+      }
+
+      try {
+        const nextSnapshot = await getSessionSnapshot(validSessionId);
+
+        setSnapshot(nextSnapshot);
+        setError(null);
+        setStatus("success");
+      } catch (nextError: unknown) {
+        if (!silent) {
+          if (!hasSnapshot) {
+            setSnapshot(null);
+            setError(nextError);
+            setStatus("error");
+          }
+
+          toastApiError(nextError);
+        }
+      } finally {
+        if (!silent) {
+          setIsRefreshing(false);
+        }
+      }
+    },
+    [validSessionId],
+  );
+
+  useEffect(() => {
     if (!validSessionId) {
+      snapshotRef.current = null;
       return;
     }
 
-    try {
-      setStatus("loading");
-      setError(null);
-
-      const nextSnapshot = await getSessionSnapshot(validSessionId);
-
-      setSnapshot(nextSnapshot);
-      setStatus("success");
-    } catch (nextError: unknown) {
-      setSnapshot(null);
-      setError(nextError);
-      setStatus("error");
-      toastApiError(nextError);
-    }
-  }, [validSessionId]);
+    snapshotRef.current = null;
+    setSnapshot(null);
+    setError(null);
+    setStatus("idle");
+    void fetchSnapshot();
+  }, [fetchSnapshot, validSessionId]);
 
   useEffect(() => {
     if (!validSessionId) {
       setStatus("idle");
       setSnapshot(null);
       setError(null);
+      setIsRefreshing(false);
+      snapshotRef.current = null;
       return;
     }
 
-    void fetchSnapshot();
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void fetchSnapshot({ silent: true });
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }, [fetchSnapshot, validSessionId]);
 
   const handleRetry = (): void => {
-    void fetchSnapshot();
+    void fetchSnapshot({ silent: false });
   };
   const isLoading = status === "loading";
 
@@ -214,11 +275,13 @@ export const SessionPage = (): JSX.Element => {
     <section className="mx-auto w-full max-w-4xl space-y-4">
       <SessionHeader
         currentTurn={snapshot.current_turn}
-        isRefreshing={status === "loading"}
+        isRefreshing={isRefreshing}
         onRefresh={handleRetry}
         sessionId={snapshot.session_id}
         status={snapshot.status}
       />
+
+      <GameplayInstructions />
 
       <Card>
         <CardHeader>

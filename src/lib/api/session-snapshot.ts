@@ -33,9 +33,9 @@ export type EventType = z.infer<typeof EventTypeSchema>;
 
 export const CellSnapshotSchema = z
   .object({
-    index: z.number().int(),
-    row: z.number().int(),
-    col: z.number().int(),
+    index: z.number().int().min(0).max(24),
+    row: z.number().int().min(0).max(4),
+    col: z.number().int().min(0).max(4),
     revealed: z.boolean(),
     locked: z.boolean(),
     letter: z.string().regex(/^[A-Z]$/).nullable(),
@@ -43,6 +43,14 @@ export const CellSnapshotSchema = z
     revealed_by: RevealedBySchema.nullable(),
   })
   .superRefine((cell, ctx) => {
+    if (cell.topics_used.length > 5) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "topics_used cannot contain more than 5 topics.",
+        path: ["topics_used"],
+      });
+    }
+
     if (!cell.revealed) {
       if (cell.letter !== null) {
         ctx.addIssue({
@@ -64,10 +72,10 @@ export const CellSnapshotSchema = z
 export type CellSnapshot = z.infer<typeof CellSnapshotSchema>;
 
 export const PlayerSnapshotSchema = z.object({
-  player_number: z.number().int(),
-  name: z.string().nullable(),
+  player_number: z.union([z.literal(1), z.literal(2)]),
+  name: z.string().max(30).nullable(),
   score: z.number().int(),
-  grid_id: z.string().uuid(),
+  grid_id: z.number().int(),
   completed: z.boolean(),
   cells: z.array(CellSnapshotSchema),
 });
@@ -83,8 +91,10 @@ export type LastEvent = z.infer<typeof LastEventSchema>;
 export const SessionSnapshotSchema = z
   .object({
     session_id: z.string().uuid(),
+    created_at: z.string(),
+    updated_at: z.string(),
     status: SessionStatusSchema,
-    current_turn: z.number().int(),
+    current_turn: z.union([z.literal(1), z.literal(2)]),
     topics: z.array(TopicSchema),
     players: z.array(PlayerSnapshotSchema).length(2),
     last_event: LastEventSchema.nullable(),
@@ -103,12 +113,13 @@ export const SessionSnapshotSchema = z
     }
 
     const playerNumbers = snapshot.players.map((player) => player.player_number);
-    const uniquePlayerNumbers = new Set(playerNumbers);
+    const playerOneCount = playerNumbers.filter((playerNumber) => playerNumber === 1).length;
+    const playerTwoCount = playerNumbers.filter((playerNumber) => playerNumber === 2).length;
 
-    if (uniquePlayerNumbers.size !== snapshot.players.length) {
+    if (playerOneCount !== 1 || playerTwoCount !== 1) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Player numbers must be unique.",
+        message: "Players must include player_number 1 and 2 exactly once.",
         path: ["players"],
       });
     }
