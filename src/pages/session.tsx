@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { z } from "zod";
 import { ActivePlayerCellsDebug } from "@/components/session/active-player-cells-debug";
+import { AskQuestionPanel } from "@/components/session/ask-question-panel";
 import { GameplayInstructions } from "@/components/session/gameplay-instructions";
 import { PlayerScoreboard } from "@/components/session/player-scoreboard";
 import { SessionHeader } from "@/components/session/session-header";
@@ -162,6 +163,14 @@ export const SessionPage = (): JSX.Element => {
   const handleRetry = (): void => {
     void fetchSnapshot({ silent: false });
   };
+
+  const handleSnapshotUpdate = (nextSnapshot: SessionSnapshot): void => {
+    snapshotRef.current = nextSnapshot;
+    setSnapshot(nextSnapshot);
+    setError(null);
+    setStatus("success");
+  };
+
   const isLoading = status === "loading";
 
   if (!validSessionId) {
@@ -298,6 +307,15 @@ export const SessionPage = (): JSX.Element => {
       </Card>
 
       <PlayerScoreboard currentTurn={snapshot.current_turn} players={snapshot.players} />
+
+      {snapshot.status === "in_progress" && activePlayer ? (
+        <AskQuestionPanel
+          activePlayer={activePlayer}
+          onSnapshotUpdate={handleSnapshotUpdate}
+          sessionId={snapshot.session_id}
+          snapshot={snapshot}
+        />
+      ) : null}
 
       <ActivePlayerCellsDebug activePlayer={activePlayer} />
 

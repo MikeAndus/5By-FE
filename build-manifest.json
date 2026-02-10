@@ -988,6 +988,219 @@
         "build-manifest.json"
       ],
       "summary": "Restructured status/snapshot guard logic into an if/else-if chain and replaced loading checks inside the error branch with a precomputed loading boolean, resolving TS2367 without changing render behavior."
+    },
+    "FE-3": {
+      "title": "Ask flow UI (5x5 square picker + topic picker) with /ask integration and Web Speech TTS playback",
+      "completed_at": "2026-02-10T19:13:10Z",
+      "contracts": {
+        "typescript": {
+          "AskQuestionRequest": {
+            "player_number": "1 | 2",
+            "cell_index": "number (int, 0..24)",
+            "topic": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\""
+          },
+          "QuestionAskedEventData": {
+            "cell_index": "number (int, 0..24)",
+            "row": "number (int, 0..4)",
+            "col": "number (int, 0..4)",
+            "topic": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+            "question_text": "string (max 500)",
+            "answer": "string (min 1)",
+            "acceptable_variants": "string[] (min length 1, each min 1)",
+            "generator": "\"stub_v1\""
+          },
+          "askQuestion(sessionId, payload)": "Promise<SessionSnapshot>"
+        },
+        "zod": {
+          "AskQuestionRequestSchema": {
+            "type": "z.object({...}).strict()",
+            "player_number": "z.union([z.literal(1), z.literal(2)])",
+            "cell_index": "z.number().int().min(0).max(24)",
+            "topic": "TopicSchema"
+          },
+          "QuestionAskedEventDataSchema": {
+            "type": "z.object({...}).strict()",
+            "cell_index": "z.number().int().min(0).max(24)",
+            "row": "z.number().int().min(0).max(4)",
+            "col": "z.number().int().min(0).max(4)",
+            "topic": "TopicSchema",
+            "question_text": "z.string().max(500)",
+            "answer": "z.string().min(1)",
+            "acceptable_variants": "z.array(z.string().min(1)).min(1)",
+            "generator": "z.literal(\"stub_v1\")"
+          }
+        }
+      },
+      "schemas": [],
+      "files_created": [
+        "build-manifest.json",
+        "src/components/session/ask-question-panel.tsx",
+        "src/lib/api/ask.ts",
+        "src/lib/api/sessions.ts",
+        "src/lib/voice/tts.ts",
+        "src/pages/session.tsx"
+      ],
+      "decisions": [
+        "Kept SessionSnapshot.last_event.event_data as record<unknown> and narrowed only at point-of-use with QuestionAskedEventDataSchema.safeParse for question_asked events.",
+        "Implemented ask panel as RHF+zod controlled UX validation and derived player_number from snapshot.current_turn to match backend authority.",
+        "Made revealed cells non-selectable while keeping locked cells selectable with a visible lock indicator to match gameplay contract.",
+        "Implemented TTS with window.speechSynthesis, cancel-before-speak behavior, and a start timeout fallback so UI status degrades cleanly when autoplay/user-gesture restrictions block speech.",
+        "Triggered speech only from explicit user gestures (successful Ask submit and Repeat button) to avoid repeated audio on 5s polling refreshes."
+      ],
+      "environment_variables": [],
+      "enums": [],
+      "response_schemas": [
+        {
+          "endpoint": "POST /sessions/{session_id}/ask",
+          "responses": {
+            "200": {
+              "session_id": {
+                "type": "string (uuid)",
+                "nullable": false
+              },
+              "created_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "updated_at": {
+                "type": "string",
+                "nullable": false
+              },
+              "status": {
+                "type": "\"in_progress\" | \"complete\"",
+                "nullable": false
+              },
+              "current_turn": {
+                "type": "1 | 2",
+                "nullable": false
+              },
+              "topics": {
+                "type": "array",
+                "nullable": false,
+                "items": {
+                  "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                  "nullable": false
+                }
+              },
+              "players": {
+                "type": "array(length=2)",
+                "nullable": false,
+                "items": {
+                  "type": "object",
+                  "nullable": false,
+                  "fields": {
+                    "player_number": {
+                      "type": "1 | 2",
+                      "nullable": false
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "score": {
+                      "type": "integer",
+                      "nullable": false
+                    },
+                    "grid_id": {
+                      "type": "integer",
+                      "nullable": false
+                    },
+                    "completed": {
+                      "type": "boolean",
+                      "nullable": false
+                    },
+                    "cells": {
+                      "type": "array",
+                      "nullable": false,
+                      "items": {
+                        "type": "object",
+                        "nullable": false,
+                        "fields": {
+                          "index": {
+                            "type": "integer",
+                            "nullable": false
+                          },
+                          "row": {
+                            "type": "integer",
+                            "nullable": false
+                          },
+                          "col": {
+                            "type": "integer",
+                            "nullable": false
+                          },
+                          "revealed": {
+                            "type": "boolean",
+                            "nullable": false
+                          },
+                          "locked": {
+                            "type": "boolean",
+                            "nullable": false
+                          },
+                          "letter": {
+                            "type": "string (^[A-Z]$)",
+                            "nullable": true
+                          },
+                          "topics_used": {
+                            "type": "array",
+                            "nullable": false,
+                            "items": {
+                              "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                              "nullable": false
+                            }
+                          },
+                          "revealed_by": {
+                            "type": "\"question\" | \"guess\" | \"auto\"",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "last_event": {
+                "type": "object",
+                "nullable": true,
+                "fields": {
+                  "type": {
+                    "type": "\"question_asked\" | \"question_answered\" | \"letter_guessed\" | \"word_guessed\"",
+                    "nullable": false
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "event_data": {
+                    "type": "object (record<string, unknown>)",
+                    "nullable": false
+                  }
+                }
+              }
+            },
+            "non_2xx": {
+              "error": {
+                "type": "object",
+                "nullable": false,
+                "fields": {
+                  "code": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "details": {
+                    "type": "unknown",
+                    "nullable": true,
+                    "optional": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

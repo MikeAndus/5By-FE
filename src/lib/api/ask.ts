@@ -1,0 +1,27 @@
+import { z } from "zod";
+import { TopicSchema } from "@/lib/api/session-snapshot";
+
+export const AskQuestionRequestSchema = z
+  .object({
+    player_number: z.union([z.literal(1), z.literal(2)]),
+    cell_index: z.number().int().min(0).max(24),
+    topic: TopicSchema,
+  })
+  .strict();
+
+export type AskQuestionRequest = z.infer<typeof AskQuestionRequestSchema>;
+
+export const QuestionAskedEventDataSchema = z
+  .object({
+    cell_index: z.number().int().min(0).max(24),
+    row: z.number().int().min(0).max(4),
+    col: z.number().int().min(0).max(4),
+    topic: TopicSchema,
+    question_text: z.string().max(500),
+    answer: z.string().min(1),
+    acceptable_variants: z.array(z.string().min(1)).min(1),
+    generator: z.literal("stub_v1"),
+  })
+  .strict();
+
+export type QuestionAskedEventData = z.infer<typeof QuestionAskedEventDataSchema>;
