@@ -141,6 +141,329 @@
           }
         }
       ]
+    },
+    "FE-1": {
+      "title": "App shell session state viewer with snapshot contract schemas and read-only session rendering",
+      "completed_at": "2026-02-10T15:19:25Z",
+      "contracts": {
+        "typescript": {
+          "Topic": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+          "SessionStatus": "\"in_progress\" | \"complete\"",
+          "RevealedBy": "\"question\" | \"guess\" | \"auto\"",
+          "EventType": "\"question_asked\" | \"question_answered\" | \"letter_guessed\" | \"word_guessed\"",
+          "CellSnapshot": {
+            "index": "number",
+            "row": "number",
+            "col": "number",
+            "revealed": "boolean",
+            "locked": "boolean",
+            "letter": "string | null",
+            "topics_used": "Topic[]",
+            "revealed_by": "RevealedBy | null"
+          },
+          "PlayerSnapshot": {
+            "player_number": "number",
+            "name": "string | null",
+            "score": "number",
+            "grid_id": "string (uuid)",
+            "completed": "boolean",
+            "cells": "CellSnapshot[]"
+          },
+          "LastEvent": {
+            "type": "EventType",
+            "created_at": "string",
+            "event_data": "Record<string, unknown>"
+          },
+          "SessionSnapshot": {
+            "session_id": "string (uuid)",
+            "status": "SessionStatus",
+            "current_turn": "number",
+            "topics": "Topic[]",
+            "players": "[PlayerSnapshot, PlayerSnapshot]",
+            "last_event": "LastEvent | null"
+          },
+          "getSessionSnapshot(sessionId)": "Promise<SessionSnapshot>"
+        },
+        "zod": {
+          "TopicSchema": "z.enum([\"Politics\", \"Science\", \"History\", \"Art\", \"Current Affairs\"])",
+          "SessionStatusSchema": "z.enum([\"in_progress\", \"complete\"])",
+          "RevealedBySchema": "z.enum([\"question\", \"guess\", \"auto\"])",
+          "EventTypeSchema": "z.enum([\"question_asked\", \"question_answered\", \"letter_guessed\", \"word_guessed\"])",
+          "CellSnapshotSchema": {
+            "index": "z.number().int()",
+            "row": "z.number().int()",
+            "col": "z.number().int()",
+            "revealed": "z.boolean()",
+            "locked": "z.boolean()",
+            "letter": "z.string().regex(/^[A-Z]$/).nullable()",
+            "topics_used": "z.array(TopicSchema)",
+            "revealed_by": "RevealedBySchema.nullable()",
+            "superRefine": "if revealed=false then letter and revealed_by must be null"
+          },
+          "PlayerSnapshotSchema": {
+            "player_number": "z.number().int()",
+            "name": "z.string().nullable()",
+            "score": "z.number().int()",
+            "grid_id": "z.string().uuid()",
+            "completed": "z.boolean()",
+            "cells": "z.array(CellSnapshotSchema)"
+          },
+          "LastEventSchema": {
+            "type": "EventTypeSchema",
+            "created_at": "z.string()",
+            "event_data": "z.record(z.unknown())"
+          },
+          "SessionSnapshotSchema": {
+            "session_id": "z.string().uuid()",
+            "status": "SessionStatusSchema",
+            "current_turn": "z.number().int()",
+            "topics": "z.array(TopicSchema)",
+            "players": "z.array(PlayerSnapshotSchema).length(2)",
+            "last_event": "LastEventSchema.nullable()",
+            "superRefine": "topics must match canonical order; player numbers unique; current_turn must exist in players"
+          }
+        }
+      },
+      "schemas": [],
+      "files_created": [
+        "build-manifest.json",
+        "package-lock.json",
+        "package.json",
+        "src/components/session/active-player-cells-debug.tsx",
+        "src/components/session/player-scoreboard.tsx",
+        "src/components/session/session-header.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/form.tsx",
+        "src/components/ui/input.tsx",
+        "src/components/ui/label.tsx",
+        "src/lib/api/session-snapshot.ts",
+        "src/lib/api/sessions.ts",
+        "src/pages/home.tsx",
+        "src/pages/session.tsx"
+      ],
+      "decisions": [
+        "Added runtime contract validation in `SessionSnapshotSchema` with non-shape-changing `superRefine` checks for unrevealed cell invariants and canonical topic ordering.",
+        "Implemented Session page as manual fetch + refresh flow using local state and `useEffect`, matching the Phase 1 no-polling requirement.",
+        "Used client-side UUID validation before any session fetch and mapped `ApiClientError` codes to explicit on-page error states.",
+        "Introduced minimal ShadCN-style form primitives (`form`, `input`, `label`) and wired Home join flow with react-hook-form + zod resolver."
+      ],
+      "environment_variables": [],
+      "enums": [
+        {
+          "name": "Topic",
+          "values": [
+            "Politics",
+            "Science",
+            "History",
+            "Art",
+            "Current Affairs"
+          ],
+          "layers": [
+            "python_db",
+            "python_api",
+            "zod"
+          ]
+        },
+        {
+          "name": "SessionStatus",
+          "values": [
+            "in_progress",
+            "complete"
+          ],
+          "layers": [
+            "python_db",
+            "python_api",
+            "zod"
+          ]
+        },
+        {
+          "name": "RevealedBy",
+          "values": [
+            "question",
+            "guess",
+            "auto"
+          ],
+          "layers": [
+            "python_db",
+            "python_api",
+            "zod"
+          ]
+        },
+        {
+          "name": "EventType",
+          "values": [
+            "question_asked",
+            "question_answered",
+            "letter_guessed",
+            "word_guessed"
+          ],
+          "layers": [
+            "python_db",
+            "python_api",
+            "zod"
+          ]
+        }
+      ],
+      "response_schemas": [
+        {
+          "endpoint": "GET /sessions/{session_id}",
+          "responses": {
+            "200": {
+              "session_id": {
+                "type": "string (uuid)",
+                "nullable": false
+              },
+              "status": {
+                "type": "\"in_progress\" | \"complete\"",
+                "nullable": false
+              },
+              "current_turn": {
+                "type": "integer",
+                "nullable": false
+              },
+              "topics": {
+                "type": "array",
+                "nullable": false,
+                "items": {
+                  "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                  "nullable": false
+                }
+              },
+              "players": {
+                "type": "array(length=2)",
+                "nullable": false,
+                "items": {
+                  "type": "object",
+                  "nullable": false,
+                  "fields": {
+                    "player_number": {
+                      "type": "integer",
+                      "nullable": false
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "score": {
+                      "type": "integer",
+                      "nullable": false
+                    },
+                    "grid_id": {
+                      "type": "string (uuid)",
+                      "nullable": false
+                    },
+                    "completed": {
+                      "type": "boolean",
+                      "nullable": false
+                    },
+                    "cells": {
+                      "type": "array",
+                      "nullable": false,
+                      "items": {
+                        "type": "object",
+                        "nullable": false,
+                        "fields": {
+                          "index": {
+                            "type": "integer",
+                            "nullable": false
+                          },
+                          "row": {
+                            "type": "integer",
+                            "nullable": false
+                          },
+                          "col": {
+                            "type": "integer",
+                            "nullable": false
+                          },
+                          "revealed": {
+                            "type": "boolean",
+                            "nullable": false
+                          },
+                          "locked": {
+                            "type": "boolean",
+                            "nullable": false
+                          },
+                          "letter": {
+                            "type": "string (^[A-Z]$)",
+                            "nullable": true
+                          },
+                          "topics_used": {
+                            "type": "array",
+                            "nullable": false,
+                            "items": {
+                              "type": "\"Politics\" | \"Science\" | \"History\" | \"Art\" | \"Current Affairs\"",
+                              "nullable": false
+                            }
+                          },
+                          "revealed_by": {
+                            "type": "\"question\" | \"guess\" | \"auto\"",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "last_event": {
+                "type": "object",
+                "nullable": true,
+                "fields": {
+                  "type": {
+                    "type": "\"question_asked\" | \"question_answered\" | \"letter_guessed\" | \"word_guessed\"",
+                    "nullable": false
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "event_data": {
+                    "type": "object (record<string, unknown>)",
+                    "nullable": false
+                  }
+                }
+              }
+            },
+            "404": {
+              "error": {
+                "type": "object",
+                "nullable": false,
+                "fields": {
+                  "code": {
+                    "type": "\"session_not_found\"",
+                    "nullable": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "nullable": false
+                  }
+                }
+              }
+            },
+            "422": {
+              "error": {
+                "type": "object",
+                "nullable": false,
+                "fields": {
+                  "code": {
+                    "type": "\"validation_error\"",
+                    "nullable": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "nullable": false
+                  },
+                  "details": {
+                    "type": "unknown",
+                    "nullable": true,
+                    "optional": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }
