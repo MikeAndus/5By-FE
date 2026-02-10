@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { GameOverPage } from "@/pages/GameOverPage";
 import { NewGamePage } from "@/pages/NewGamePage";
@@ -21,7 +21,8 @@ export const AppRoutes = (): JSX.Element => {
     <Routes>
       <Route path="/" element={<NewGamePage />} />
       <Route path="/s/:sessionId" element={<SessionPage />} />
-      <Route path="/game-over" element={<GameOverPage />} />
+      <Route path="/s/:sessionId/over" element={<GameOverPage />} />
+      <Route path="/game-over" element={<Navigate to="/" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

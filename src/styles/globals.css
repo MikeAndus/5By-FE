@@ -52,8 +52,16 @@
     @apply border-border;
   }
 
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
   body {
     @apply bg-background font-sans text-foreground antialiased;
+    font-weight: 300;
+    min-height: 100dvh;
     text-rendering: optimizeLegibility;
   }
 
@@ -65,5 +73,30 @@
   h6,
   .font-display {
     font-family: "Syne", sans-serif;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .safe-px {
+    padding-left: max(env(safe-area-inset-left), 1rem);
+    padding-right: max(env(safe-area-inset-right), 1rem);
+  }
+
+  .safe-pt {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+
+  .safe-pb {
+    padding-bottom: max(env(safe-area-inset-bottom), 1.5rem);
+  }
+
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
   }
 }

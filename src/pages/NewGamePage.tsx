@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Sparkles } from "lucide-react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -13,8 +14,16 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useSessionStore } from "@/state/sessionStore";
 
 const newGameSchema = z.object({
   playerOne: z
@@ -27,17 +36,16 @@ const newGameSchema = z.object({
     .max(24, "Player 2 name must be 24 characters or less.")
 });
 
-interface NewGameFormValues {
-  playerOne: string;
-  playerTwo: string;
-}
+type NewGameFormValues = z.infer<typeof newGameSchema>;
 
 export const NewGamePage = (): JSX.Element => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting }
-  } = useForm<NewGameFormValues>({
+  const clearSession = useSessionStore((state) => state.clear);
+
+  useEffect(() => {
+    clearSession();
+  }, [clearSession]);
+
+  const form = useForm<NewGameFormValues>({
     resolver: zodResolver(newGameSchema),
     defaultValues: {
       playerOne: "",
@@ -55,11 +63,11 @@ export const NewGamePage = (): JSX.Element => {
     <section className="space-y-5">
       <header className="space-y-2">
         <Badge variant="secondary" className="border border-border/60 bg-accentPeriwinkle text-primary">
-          FE-0 Placeholder
+          FE-1 Placeholder
         </Badge>
         <h1 className="font-display text-3xl leading-tight">New Game</h1>
         <p className="text-sm text-muted-foreground">
-          Five-By is a voice-first party game scaffold. This screen is local-only for FE-0.
+          Five-By is resilient to refresh and reconnect through `session_id` links. Session creation lands here.
         </p>
       </header>
 
@@ -69,26 +77,45 @@ export const NewGamePage = (): JSX.Element => {
           <CardDescription>Add player names and initialize a placeholder session.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form id="new-game-form" className="space-y-4" onSubmit={handleSubmit(handleCreateGame)}>
-            <div className="space-y-2">
-              <Label htmlFor="playerOne">Player 1 name</Label>
-              <Input id="playerOne" placeholder="Alex" autoComplete="off" {...register("playerOne")} />
-              {errors.playerOne ? (
-                <p className="text-sm text-destructive">{errors.playerOne.message}</p>
-              ) : null}
-            </div>
+          <Form {...form}>
+            <form id="new-game-form" className="space-y-4" onSubmit={form.handleSubmit(handleCreateGame)}>
+              <FormField
+                control={form.control}
+                name="playerOne"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Player 1 name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Alex" autoComplete="off" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="space-y-2">
-              <Label htmlFor="playerTwo">Player 2 name</Label>
-              <Input id="playerTwo" placeholder="Jordan" autoComplete="off" {...register("playerTwo")} />
-              {errors.playerTwo ? (
-                <p className="text-sm text-destructive">{errors.playerTwo.message}</p>
-              ) : null}
-            </div>
-          </form>
+              <FormField
+                control={form.control}
+                name="playerTwo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Player 2 name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Jordan" autoComplete="off" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
         </CardContent>
         <CardFooter>
-          <Button className="h-12 w-full text-base" form="new-game-form" type="submit" disabled={isSubmitting}>
+          <Button
+            className="tap-target w-full text-base"
+            form="new-game-form"
+            type="submit"
+            disabled={form.formState.isSubmitting}
+          >
             <Sparkles className="mr-2 h-5 w-5" aria-hidden="true" />
             New Game
           </Button>

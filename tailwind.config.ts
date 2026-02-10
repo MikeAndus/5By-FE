@@ -38,8 +38,10 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)"
       },
       fontFamily: {
-        sans: ["Archivo", "sans-serif"],
-        display: ["Syne", "sans-serif"]
+        sans: ["Archivo", "ui-sans-serif", "system-ui", "sans-serif"],
+        syne: ["Syne", "ui-sans-serif", "system-ui", "sans-serif"],
+        archivo: ["Archivo", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Syne", "ui-sans-serif", "system-ui", "sans-serif"]
       }
     }
   },
