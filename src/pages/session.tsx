@@ -101,6 +101,7 @@ export const SessionPage = (): JSX.Element => {
   const handleRetry = (): void => {
     void fetchSnapshot();
   };
+  const isLoading = status === "loading";
 
   if (!validSessionId) {
     return (
@@ -135,9 +136,7 @@ export const SessionPage = (): JSX.Element => {
         </Card>
       </section>
     );
-  }
-
-  if (status === "error") {
+  } else if (status === "error") {
     const apiError = error instanceof ApiClientError ? error : null;
 
     if (apiError?.code === "session_not_found") {
@@ -145,7 +144,7 @@ export const SessionPage = (): JSX.Element => {
         <section className="mx-auto w-full max-w-4xl">
           <ErrorStateCard
             description="No session exists for this ID."
-            isLoading={status === "loading"}
+            isLoading={isLoading}
             onRetry={handleRetry}
             showRetry={true}
             title="Session not found"
@@ -159,7 +158,7 @@ export const SessionPage = (): JSX.Element => {
         <section className="mx-auto w-full max-w-4xl">
           <ErrorStateCard
             description="The backend rejected the session ID format."
-            isLoading={status === "loading"}
+            isLoading={isLoading}
             onRetry={handleRetry}
             showRetry={false}
             title="Invalid session id"
@@ -173,7 +172,7 @@ export const SessionPage = (): JSX.Element => {
         <section className="mx-auto w-full max-w-4xl">
           <ErrorStateCard
             description="Snapshot response does not match the Phase Contract. Check backend and frontend versions."
-            isLoading={status === "loading"}
+            isLoading={isLoading}
             onRetry={handleRetry}
             showRetry={true}
             title="Incompatible API response"
@@ -186,16 +185,14 @@ export const SessionPage = (): JSX.Element => {
       <section className="mx-auto w-full max-w-4xl">
         <ErrorStateCard
           description="Could not load session. Please retry."
-          isLoading={status === "loading"}
+          isLoading={isLoading}
           onRetry={handleRetry}
           showRetry={true}
           title="Could not load session"
         />
       </section>
     );
-  }
-
-  if (!snapshot) {
+  } else if (!snapshot) {
     return (
       <section className="mx-auto w-full max-w-4xl">
         <ErrorStateCard

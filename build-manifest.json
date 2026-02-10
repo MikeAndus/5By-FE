@@ -464,6 +464,15 @@
           }
         }
       ]
+    },
+    "FE-FIX-1.1": {
+      "title": "Fix TS2367 status narrowing comparisons in session page",
+      "completed_at": "2026-02-10T15:48:53Z",
+      "files_modified": [
+        "src/pages/session.tsx",
+        "build-manifest.json"
+      ],
+      "summary": "Restructured status/snapshot guard logic into an if/else-if chain and replaced loading checks inside the error branch with a precomputed loading boolean, resolving TS2367 without changing render behavior."
     }
   }
 }
